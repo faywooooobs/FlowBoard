@@ -349,7 +349,7 @@ async function renderFeed(posts, targetId) {
     }
 
     container.innerHTML = posts.map(post => {
-        const userProfileLink = `/profile/@${post.username}`;
+        const userProfileLink = `/profile?username@${post.username}`;
         const postDetailLink = `/post/${post.post_id || post.id}`; 
 
         let badgeHtml = '';
