@@ -17,27 +17,10 @@ window.goToMyProfile = function(username) {
     // 根據環境決定跳轉網址：
     // 本地端：為了避免 404，指向 profile.html 並帶參數
     // 線上端：配合 Vercel Rewrite，使用漂亮的 /profile/@id
-    const url = `/profile.html?username=@${targetId}` ;
+    const url = `/profile?username=@${targetId}` ;
     
     window.location.href = url;
 };
-// --- 2. 本地開發路由相容處理 (立即執行函數) ---
-(function() {
-    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-    const path = window.location.pathname;
-
-    if (isLocal && path !== '/' && !path.includes('.')) {
-        if (path === '/home') {
-            window.history.replaceState(null, '', '/index.html');
-        } 
-        else if (path === '/profile' || path.startsWith('/@')) {
-            window.history.replaceState(null, '', '/profile.html');
-        }
-        else if (path.startsWith('/post/')) {
-            window.history.replaceState(null, '', '/post-detail.html');
-        }
-    }
-})();
 
 // 修正：偵測路徑並移除結尾斜線
 let PATH = window.location.pathname;
@@ -274,7 +257,7 @@ async function createPost() {
     else {
         postInput.value = '';
         const currentPath = window.location.pathname;
-        const isAtProfile = (currentPath.includes('/profile') || currentPath.startsWith('/@'));
+        const isAtProfile = (currentPath.includes('/profile?username=') || currentPath.startsWith('/@'));
         if (isAtProfile) {
             const targetUsername = currentPath.includes('@') ? currentPath.split('@')[1] : null;
             loadUserPosts(targetUsername);
