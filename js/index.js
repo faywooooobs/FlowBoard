@@ -2,6 +2,7 @@
 const SB_URL = 'https://gwggzmjpigixnjxgfsgd.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3Z2d6bWpwaWdpeG5qeGdmc2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNDkyNjAsImV4cCI6MjA4MzYyNTI2MH0.anBepq09VaL2aeGBfhx5vl2JAs3AzcqLdOscTncKTTE';
 const _sb = supabase.createClient(SB_URL, SB_KEY);
+
 // --- 全域跳轉函數：確保 HTML onclick 抓得到 ---
 window.goToMyProfile = function(username) {
     // 優先順序：傳入的參數 > 全域變數 window.myUsername
@@ -12,12 +13,8 @@ window.goToMyProfile = function(username) {
         return;
     }
     
-    const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-    
-    // 根據環境決定跳轉網址：
-    // 本地端：為了避免 404，指向 profile.html 並帶參數
-    // 線上端：配合 Vercel Rewrite，使用漂亮的 /profile/@id
-    const url = `/profile?username=@${targetId}` ;
+    // 統一修改為 /profile?username=@id 格式
+    const url = `/profile?username=@${targetId}`;
     
     window.location.href = url;
 };
@@ -82,7 +79,7 @@ async function checkSession() {
             // --- 狀態：已登入 ---
             const meta = session.user.user_metadata;
             
-            // 重要：定義全域變數，供 HTML 的 onclick="location.href='/profile/@' + myUsername" 使用
+            // 重要：定義全域變數
             window.myUsername = meta.username;
 
             // 更新導航欄顯示
@@ -92,14 +89,14 @@ async function checkSession() {
             };
             setUI('user-display', meta.nickname || meta.username);
 
-            // --- 路由邏輯：支援多種路徑格式 ---
+            // --- 路由邏輯 ---
             const isAtProfile = currentPath.includes('profile');
             const isAtPost = currentPath.startsWith('/post/');
 
             if (isAtProfile) {
-                // 優先序：URL參數 (?username=@1) > 路徑 (/profile/@1) > 自己
                 let targetUsername = null;
                 
+                // 解析邏輯統一：優先從 URL 參數抓取
                 if (queryUser && queryUser.startsWith('@')) {
                     targetUsername = queryUser.replace('@', '');
                 } else if (currentPath.includes('@')) {
@@ -108,8 +105,6 @@ async function checkSession() {
                     targetUsername = window.myUsername;
                 }
 
-                // --- 效能優化：並行加載 (Parallel Load) ---
-                // 使用 ilike 確保不分大小寫
                 if (targetUsername) {
                     await Promise.all([
                         loadUserProfile(targetUsername),
@@ -122,7 +117,6 @@ async function checkSession() {
                 console.log("查看貼文詳情:", postId);
             }
             else {
-                // 首頁加載
                 await loadPosts();
             }
             
@@ -148,36 +142,44 @@ async function checkSession() {
     }
 }
 
-// 補丁：確保 loadUserProfile 使用 .ilike
-async function loadUserProfile(username) {
-    if (!username) return;
+async function loadUserProfile(targetUsername) {
+    if (!targetUsername) return;
+
     const { data, error } = await _sb.from('profiles')
         .select('*')
-        .ilike('username', username) // 不分大小寫查詢
+        .ilike('username', targetUsername) 
         .single();
 
-    if (error) {
-        console.error("找不到該用戶");
+    if (error || !data) {
+        console.error("找不到該用戶:", targetUsername);
         return;
     }
 
-    // 更新個人資料 UI
-    const nameEl = document.getElementById('profile-name');
-    const handleEl = document.getElementById('profile-handle');
-    const bioEl = document.getElementById('profile-bio');
-    const avatarEl = document.getElementById('profile-avatar');
+    const setUI = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text || '';
+    };
 
-    if (nameEl) nameEl.innerText = data.nickname || data.username;
-    if (handleEl) handleEl.innerText = `@${data.username}`;
-    if (bioEl) bioEl.innerText = data.bio || "這傢伙很懶...";
-    if (avatarEl) avatarEl.src = data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`;
+    setUI('profile-name', data.nickname || data.username);
+    setUI('profile-handle', `@${data.username}`);
+    setUI('profile-bio', data.bio || "這傢伙很懶，什麼都沒留下。");
+    
+    const avatarEl = document.getElementById('profile-avatar');
+    if (avatarEl) {
+        avatarEl.src = data.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + data.username;
+    }
 }
 
-// 解析功能：從路徑中提取 username
-function getUsernameFromPath() {
-    const segments = window.location.pathname.split('/'); 
-    const profileSegment = segments.find(s => s.startsWith('@'));
-    return profileSegment ? profileSegment.replace('@', '') : null;
+async function loadUserPosts(targetUsername) {
+    const container = document.getElementById('user-posts');
+    if (!container || !targetUsername) return;
+
+    const { data, error } = await _sb.from('post_with_profile')
+        .select('*')
+        .ilike('username', targetUsername)
+        .order('created_at', { ascending: false });
+
+    if (!error) renderFeed(data, 'user-posts');
 }
 
 // --- 5. 身份驗證提交 ---
@@ -256,10 +258,11 @@ async function createPost() {
     if (error) alert('發布失敗');
     else {
         postInput.value = '';
-        const currentPath = window.location.pathname;
-        const isAtProfile = (currentPath.includes('/profile?username=') || currentPath.startsWith('/@'));
-        if (isAtProfile) {
-            const targetUsername = currentPath.includes('@') ? currentPath.split('@')[1] : null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryUser = urlParams.get('username');
+        
+        if (window.location.pathname.includes('profile')) {
+            const targetUsername = queryUser ? queryUser.replace('@', '') : window.myUsername;
             loadUserPosts(targetUsername);
         } else {
             loadPosts();
@@ -273,75 +276,24 @@ async function loadPosts() {
     if (!error) renderFeed(data, 'feed');
 }
 
-async function loadUserProfile(targetUsername) {
-    if (!targetUsername) return;
-
-    // 使用 .ilike 進行不分大小寫的比對
-    const { data, error } = await _sb.from('profiles')
-        .select('*')
-        .ilike('username', targetUsername) 
-        .single();
-
-    if (error || !data) {
-        console.error("找不到該用戶:", targetUsername);
-        // 可以導向 404 頁面或顯示用戶不存在
-        return;
-    }
-
-    // 更新 UI
-    const setUI = (id, text) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = text || '';
-    };
-
-    setUI('profile-name', data.nickname || data.username);
-    setUI('profile-handle', `@${data.username}`);
-    setUI('profile-bio', data.bio || "這傢伙很懶，什麼都沒留下。");
-    
-    const avatarEl = document.getElementById('profile-avatar');
-    if (avatarEl) {
-        avatarEl.src = data.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + data.username;
-    }
-}
-
-async function loadUserPosts(targetUsername) {
-    const container = document.getElementById('user-posts');
-    if (!container || !targetUsername) return;
-
-    // 使用 .ilike 確保輸入大寫或小寫 ID 都能抓到貼文
-    const { data, error } = await _sb.from('post_with_profile')
-        .select('*')
-        .ilike('username', targetUsername)
-        .order('created_at', { ascending: false });
-
-    if (!error) {
-        renderFeed(data, 'user-posts');
-    }
-}
-
 async function renderFeed(posts, targetId) {
     const container = document.getElementById(targetId);
     if (!container) return;
     
-    const { data: { session } } = await _sb.auth.getSession();
-    const myUsername = session?.user?.user_metadata?.username;
-
     if (!posts || posts.length === 0) {
         container.innerHTML = `<div class="p-20 text-center text-zinc-600"><p>尚未有內容</p></div>`;
         return;
     }
 
     container.innerHTML = posts.map(post => {
-        const userProfileLink = `/profile?username@${post.username}`;
+        // 統一修改渲染連結格式
+        const userProfileLink = `/profile?username=@${post.username}`;
         const postDetailLink = `/post/${post.post_id || post.id}`; 
 
         let badgeHtml = '';
-        const isOfficial = post.is_official === true || post.is_official === 'true';
-        const isVerified = post.is_verified === true || post.is_verified === 'true';
-
-        if (isOfficial) {
+        if (post.is_official) {
             badgeHtml = `<div class="badge-icon"><i class="fa-solid fa-shield-halved text-[10px] text-yellow-500"></i></div>`;
-        } else if (isVerified) {
+        } else if (post.is_verified) {
             badgeHtml = `<div class="badge-icon"><i class="fa-solid fa-circle-check text-[11px] text-blue-400"></i></div>`;
         }
 
