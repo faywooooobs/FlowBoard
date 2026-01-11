@@ -229,3 +229,96 @@ body {
 .nav-item.active {
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
 }
+/* --- 響應式佈局優化 --- */
+
+/* 1. 平板與手機 (螢幕寬度小於 1024px) */
+@media (max-width: 1024px) {
+    /* 側邊導覽列縮減為只有圖標，隱藏文字 */
+    .nav-item span {
+        display: none;
+    }
+    
+    .nav-item {
+        justify-content: center;
+        padding: 14px;
+        width: 56px;
+        height: 56px;
+        margin: 0 auto;
+    }
+
+    /* 調整主容器寬度 */
+    .max-w-7xl {
+        flex-direction: row;
+    }
+}
+
+/* 2. 純手機版 (螢幕寬度小於 768px) */
+@media (max-width: 768px) {
+    /* 隱藏右側欄 */
+    aside.hidden.lg\:block {
+        display: none !important;
+    }
+
+    /* 彈窗寬度調整，填滿一點 */
+    .modal-content {
+        width: 95%;
+        padding: 1.5rem;
+    }
+
+    /* 登陸頁文字縮小以免折行太醜 */
+    #landing-page h1 {
+        font-size: 3.5rem !important;
+    }
+
+    /* 貼文卡片間距微調 */
+    .post-card {
+        padding: 1rem;
+    }
+
+    /* 如果你打算做底部導覽列 (Mobile Bottom Nav) */
+    /* 這部分是選用的，若想把側邊欄移到下方可開啟以下邏輯 */
+    /*
+    aside {
+        position: fixed;
+        bottom: 0;
+        width: 100% !important;
+        height: 60px !important;
+        flex-direction: row !important;
+        border-top: 1px solid var(--border);
+        border-right: none !important;
+        background: rgba(0,0,0,0.8);
+        backdrop-filter: blur(10px);
+        z-index: 50;
+    }
+    .nav-container { flex-direction: row !important; justify-content: space-around; width: 100%; }
+    .nav-item { background: transparent; border: none; transform: none !important; }
+    */
+}
+
+/* 3. 小手機 (螢幕寬度小於 480px) */
+@media (max-width: 480px) {
+    .btn-main {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .input-dark {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    #landing-page .text-xl {
+        font-size: 1rem;
+    }
+}
+
+/* --- 額外修正：確保圖片與影片不超出容器 --- */
+img, video {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 確保發文框在手機上不會被擋住 */
+#post-content {
+    font-size: 16px; /* 再次確保 iOS 不會因字體小於 16px 而自動放大畫面的 bug */
+}
