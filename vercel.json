@@ -1,0 +1,9 @@
+{
+    "cleanUrls": true,
+    "rewrites": [
+      { "source": "/home", "destination": "/index.html" },
+      { "source": "/profile", "destination": "/profile.html" },
+      { "source": "/profile/@:username", "destination": "/profile.html" },
+      { "source": "/post/:id", "destination": "/post-detail.html" }
+    ]
+  }

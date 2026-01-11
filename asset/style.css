@@ -322,3 +322,6 @@ img, video {
 #post-content {
     font-size: 16px; /* 再次確保 iOS 不會因字體小於 16px 而自動放大畫面的 bug */
 }
+#feed{
+    background-color: #181818;
+}
