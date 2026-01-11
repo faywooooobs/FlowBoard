@@ -17,9 +17,7 @@ window.goToMyProfile = function(username) {
     // 根據環境決定跳轉網址：
     // 本地端：為了避免 404，指向 profile.html 並帶參數
     // 線上端：配合 Vercel Rewrite，使用漂亮的 /profile/@id
-    const url = isLocal 
-        ? `/profile.html?username=@${targetId}` 
-        : `/profile/@${targetId}`;
+    const url = `/profile.html?username=@${targetId}` ;
     
     window.location.href = url;
 };
