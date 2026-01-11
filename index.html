@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowBoard | 連結愛好，流動思想</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="asset/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 保持原本的 CSS 邏輯 */
+        #landing-page, #main-app { display: none !important; }
+        .auth-ready #main-app { display: block !important; }
+        .guest-ready #landing-page { display: flex !important; }
+        #initial-loader { transition: opacity 0.4s ease-out; }
+        .loader-hidden { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body class="bg-black text-white antialiased">
+
+    <div id="landing-page" class="flex min-h-screen items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full">
+            <div class="mb-8 inline-flex items-center justify-center w-20 h-20 bg-white rounded-3xl text-black rotate-3">
+                <i class="fa-solid fa-wind text-4xl"></i>
+            </div>
+            <h1 class="text-7xl font-black italic tracking-tighter mb-4">FlowBoard</h1>
+            <p class="text-zinc-500 mb-12 text-xl font-medium tracking-wide">連結愛好，流動思想。</p>
+            <button onclick="openAuthModal()" class="btn-main px-16 py-4 text-lg shadow-lg shadow-white/10">立即進入</button>
+        </div>
+    </div>
+
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content relative animate-in fade-in zoom-in duration-300">
+            <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h2 id="auth-title" class="text-3xl font-black mb-8 italic">登入</h2>
+            <form id="auth-form" class="space-y-4">
+                <input type="text" id="username" placeholder="用戶 ID" class="input-dark" required>
+                <div id="signup-fields" class="hidden">
+                    <input type="text" id="nickname" placeholder="顯示暱稱" class="input-dark">
+                </div>
+                <input type="password" id="password" placeholder="密碼" class="input-dark" required>
+                <div id="confirm-password-group" class="hidden">
+                    <input type="password" id="confirm-password" placeholder="確認密碼" class="input-dark">
+                </div>
+                <button type="submit" id="auth-btn-submit" class="btn-main w-full py-4 mt-6 text-lg">確定</button>
+            </form>
+            <p class="mt-8 text-sm text-zinc-500 text-center">
+                <span id="auth-switch-text">還沒有帳號？</span> 
+                <button onclick="toggleAuthMode()" class="text-white underline font-bold" id="auth-switch-btn">立即註冊</button>
+            </p>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden min-h-screen">
+        <div class="max-w-7xl mx-auto flex justify-center">
+            
+            <aside class="w-20 lg:w-72 h-screen sticky top-0 p-4 flex flex-col border-r border-zinc-800">
+                <div class="text-3xl font-black italic mb-10 px-4 hidden lg:block tracking-tighter">FlowBoard</div>
+                <nav class="nav-container flex-1">
+                    <div id="nav-feed" class="nav-item active" onclick="location.href='index.html'">
+                        <i class="fa-solid fa-house"></i><span>首頁</span>
+                    </div>
+                    <div id="nav-profile" class="nav-item" onclick="location.href='profile.html'">
+                        <i class="fa-solid fa-user"></i><span>個人檔案</span>
+                    </div>
+                </nav>
+                <div class="mt-auto pt-4 border-t border-zinc-900">
+                    <div id="user-display" class="px-4 text-[10px] font-bold text-zinc-600 uppercase mb-4 truncate"></div>
+                    <div class="nav-item" onclick="handleLogout()">
+                        <i class="fa-solid fa-right-from-bracket"></i><span>登出</span>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="w-full max-w-2xl border-r border-zinc-800 min-h-screen">
+                <header class="sticky top-0 bg-black/60 backdrop-blur-xl p-4 border-b border-zinc-800 z-40">
+                    <h2 class="text-xl font-black tracking-tight">首頁</h2>
+                </header>
+
+                <section class="p-6 border-b border-zinc-800">
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-700 overflow-hidden">
+                            <i class="fa-solid fa-user-ninja text-2xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <textarea id="post-content" placeholder="有什麼新思想？" class="w-full bg-transparent border-none focus:ring-0 text-xl resize-none" rows="3"></textarea>
+                            <div class="flex justify-end mt-4">
+                                <button onclick="createPost()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-2 rounded-full transition-all text-sm">發布</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div id="feed"></div>
+            </main>
+
+            <aside class="w-80 p-6 hidden lg:block">
+                </aside>
+        </div>
+    </div>
+
+    <div id="initial-loader" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center">
+        <div class="w-10 h-10 border-4 border-zinc-800 border-t-white rounded-full animate-spin mb-4"></div>
+        <p class="text-zinc-500 text-xs font-medium tracking-widest uppercase">正在載入 FlowBoard</p>
+    </div>
+
+    <script src="js/index.js"></script>
+</body>
+</html>
