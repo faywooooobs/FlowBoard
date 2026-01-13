@@ -9,10 +9,29 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const _sb = supabase.createClient(SB_URL, SB_KEY);
 
 // --- 2. 全域跳轉與工具函數 ---
+// --- 修正後的跳轉邏輯：點擊相同用戶時網址加 ' 並返回首頁 ---
 window.goToMyProfile = function(username) {
     const targetId = username || window.myUsername;
     if (!targetId) return;
-    window.location.href = `/profile/@${targetId}`;
+
+    // 取得當前網址路徑
+    const currentPath = window.location.pathname;
+    // 取得目前正在看的用戶 (從 /profile/@username 中提取)
+    const currentProfileUser = currentPath.includes('@') ? currentPath.split('@')[1] : null;
+
+    if (currentProfileUser === targetId) {
+        // 如果點擊的是同一個人：網址加單引號，然後回首頁
+        const cancelUrl = window.location.href + "'";
+        window.history.replaceState(null, null, cancelUrl);
+        
+        // 停頓一下讓使用者看到網址變化，隨即跳回首頁
+        setTimeout(() => {
+            window.location.href = '/home';
+        }, 200);
+    } else {
+        // 如果是不同人，則正常跳轉到新路由
+        window.location.href = `/profile?username=${targetId}`;
+    }
 };
 
 function timeAgo(date) {
@@ -216,7 +235,7 @@ async function renderFeed(posts, targetId) {
     }
 
     container.innerHTML = posts.map(post => {
-        const userProfileLink = `/profile/@${post.username}`;
+        const userProfileLink = `/profile?username=${post.username}`;
         const postDetailLink = `/post/${post.post_id || post.id}`; 
         
         // 勳章 HTML：使用 absolute 定位至右下角
