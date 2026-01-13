@@ -88,19 +88,42 @@ async function checkSession() {
                 }
             }
 
-            // 路由判斷
-            const isAtProfile = currentPath.includes('profile');
-            if (isAtProfile) {
-                let targetUsername = (queryUser && queryUser.startsWith('@')) 
-                    ? queryUser.replace('@', '') 
-                    : (currentPath.includes('@') ? currentPath.split('@')[1] : window.myUsername);
-                
-                if (targetUsername) {
-                    await Promise.all([loadUserProfile(targetUsername), loadUserPosts(targetUsername)]);
-                }
-            } else if (!currentPath.startsWith('/post/')) {
-                await loadPosts(); 
-            }
+            // --- 在 checkSession 函數內的路由解析區塊 ---
+
+// 1. 取得當前路徑
+const currentPath = window.location.pathname;
+
+// 2. 判斷是否在 profile 相關頁面
+const isAtProfile = currentPath.startsWith('/profile');
+
+if (isAtProfile) {
+    let targetUsername = "";
+
+    // 嘗試從路徑解析 @ 之後的內容 (例如: /profile/@FayWooooo)
+    if (currentPath.includes('@')) {
+        targetUsername = currentPath.split('@')[1].split('/')[0];
+    } 
+    // 如果路徑沒有 @，但 URL 參數有 username (舊版相容)
+    else if (urlParams.get('username')) {
+        targetUsername = urlParams.get('username').replace('@', '');
+    }
+    // 如果都沒有，預設看自己的 profile
+    else {
+        targetUsername = window.myUsername;
+    }
+
+    if (targetUsername) {
+        console.log("正在加載目標用戶:", targetUsername);
+        // 執行你原本寫好的加載函數
+        await Promise.all([
+            loadUserProfile(targetUsername),
+            loadUserPosts(targetUsername)
+        ]);
+    }
+} else if (currentPath === '/' || currentPath === '/home' || currentPath === '/index.html') {
+    // 回到首頁加載所有貼文
+    await loadPosts();
+}
             
             body.classList.add('auth-ready');
             body.classList.remove('guest-ready');
