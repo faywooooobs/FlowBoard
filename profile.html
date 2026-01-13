@@ -4,27 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>個人檔案 | FlowBoard</title>
-    <base href="profile">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="asset/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <meta name="description" content="FlowBoard 是一個極簡、純粹的社群空間。在這裡連結愛好，分享創意，讓思想自由流動。">
-<meta name="keywords" content="FlowBoard, 社群媒體, 思想流動, 愛好交流, 極簡社群">
-
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://flowboard.vercel.app/">
-<meta property="og:title" content="FlowBoard | 連結愛好，流動思想">
-<meta property="og:description" content="加入 FlowBoard，體驗最純粹的交流空間。">
-<meta property="og:image" content="https://flowboard.vercel.app/asset/og-image.png">
-
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:title" content="FlowBoard | 連結愛好，流動思想">
-<meta property="twitter:description" content="連結愛好，流動思想。">
     <style>
-        /* 頁面未準備好前隱藏主內容，防止閃爍 */
         #main-app { display: none !important; }
         .auth-ready #main-app { display: block !important; }
+        /* 初始隱藏設定按鈕，由 JS 判斷身分後顯示 */
+        #edit-profile-btn { display: none; }
+        /* 確保大圖不破壞版面，模擬 2560x1440 比例 */
+        .banner-container {
+            width: 100%;
+            height: 100px; /* 固定高度，寬度隨容器 */
+            background: #18181b;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-black text-white antialiased">
@@ -38,7 +33,7 @@
                     <div class="nav-item" onclick="location.href='index.html'">
                         <i class="fa-solid fa-house"></i><span>首頁</span>
                     </div>
-                    <div id="nav-profile" class="nav-item" onclick="location.href='/profile/@' + myUsername">
+                    <div class="nav-item active" onclick="location.href='profile.html'">
                         <i class="fa-solid fa-user"></i><span>個人檔案</span>
                     </div>
                 </nav>
@@ -51,50 +46,65 @@
             </aside>
 
             <main class="w-full max-w-2xl border-r border-zinc-800 min-h-screen">
-                <header class="sticky top-0 bg-black/60 backdrop-blur-xl p-4 border-b border-zinc-800 z-40 flex items-center gap-4">
+                <header class="sticky top-0 bg-black/60 backdrop-blur-xl p-4 border-b border-zinc-800 z-40 flex items-center gap-6">
                     <button onclick="location.href='index.html'" class="hover:bg-zinc-900 w-9 h-9 rounded-full flex items-center justify-center transition-colors">
                         <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <h2 class="text-xl font-black tracking-tight">個人檔案</h2>
+                    <div>
+                        <h2 id="header-user-name" class="text-xl font-black tracking-tight">個人檔案</h2>
+                    </div>
                 </header>
 
                 <section class="border-b border-zinc-800">
-                    <div class="h-32 bg-zinc-900"></div> <div class="px-6 pb-6">
-                        <div class="relative flex justify-between items-end -mt-12 mb-4">
-                            <div class="w-24 h-24 rounded-full bg-black p-1">
-                                <div class="w-full h-full rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-                                    <i class="fa-solid fa-user-ninja text-4xl text-zinc-600"></i>
+                    <div class="banner-container relative">
+                        <img id="profile-banner" src="" alt="Banner" class="w-full h-full object-cover">
+                    </div> 
+                    
+                    <div class="px-6 pb-6">
+                        <div class="relative flex justify-between items-end -mt-14 mb-4">
+                            <div class="w-32 h-32 rounded-full bg-black p-1 shadow-2xl">
+                                <div class="w-full h-full rounded-full bg-zinc-800 border-4 border-black flex items-center justify-center overflow-hidden">
+                                    <img id="profile-avatar" src="" class="w-full h-full object-cover">
                                 </div>
                             </div>
+                            
+                            <button id="edit-profile-btn" onclick="location.href='setting.html'" 
+                                class="mb-2 px-6 py-2 rounded-full border border-zinc-700 font-bold text-sm hover:bg-zinc-900 transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-gear text-xs"></i> 帳號設定
+                            </button>
                         </div>
-                        <div>
-                            <h1 id="profile-name" class="text-2xl font-black italic">載入中...</h1>
+
+                        <div style="display: flex;"><div class="mt-4">
+                            <h1 id="profile-name" class="text-2xl font-black italic tracking-tight">載入中...</h1>
                             <p id="profile-handle" class="text-zinc-500 font-medium">@username</p>
+                            <p id="profile-bio" class="text-zinc-200 mt-4 leading-relaxed text-sm lg:text-base break-words min-h-[1.5em]"></p>
                         </div>
+                        <div class="nav-item active" style="margin-left: 25px;height: 50px;" onclick="location.href='setting.html'">
+                            <i class="fa-solid fa-user"></i><span>帳號設定</span>
+                        </div></div>
                     </div>
                     
                     <div class="flex border-b border-zinc-800 mt-4">
-                        <div class="flex-1 text-center py-4 font-bold border-b-4 border-blue-500">貼文</div>
-                        <div class="flex-1 text-center py-4 font-bold text-zinc-500 hover:bg-zinc-900 cursor-not-allowed">回覆</div>
-                        <div class="flex-1 text-center py-4 font-bold text-zinc-500 hover:bg-zinc-900 cursor-not-allowed">喜歡</div>
+                        <div class="flex-1 text-center py-4 font-black border-b-4 border-white text-sm uppercase tracking-widest">貼文</div>
+                        <div class="flex-1 text-center py-4 font-bold text-zinc-600 hover:bg-zinc-900 cursor-not-allowed text-sm uppercase tracking-widest">媒體</div>
+                        <div class="flex-1 text-center py-4 font-bold text-zinc-600 hover:bg-zinc-900 cursor-not-allowed text-sm uppercase tracking-widest">喜歡</div>
                     </div>
                 </section>
 
                 <div id="user-posts"></div>
             </main>
 
-            <aside class="w-80 p-6 hidden lg:block">
-                <div class="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
-                    <h3 class="font-black text-xl mb-4 italic">推薦追蹤</h3>
-                    <p class="text-zinc-500 text-sm">暫無建議</p>
+            <aside class="w-80 p-6 hidden lg:block sticky top-0 h-fit">
+                <div class="bg-zinc-900/40 rounded-3xl p-6 border border-zinc-800">
+                    <h3 class="font-black text-xl mb-4 italic tracking-tighter text-zinc-300">探索社群</h3>
+                    <p class="text-zinc-500 text-sm leading-relaxed">正在為您準備推薦內容...</p>
                 </div>
             </aside>
         </div>
     </div>
 
     <div id="initial-loader" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center">
-        <div class="w-10 h-10 border-4 border-zinc-800 border-t-white rounded-full animate-spin mb-4"></div>
-        <p class="text-zinc-500 text-xs font-medium tracking-widest uppercase">載入檔案中</p>
+        <div class="w-8 h-8 border-2 border-zinc-800 border-t-white rounded-full animate-spin mb-4"></div>
     </div>
 
     <script src="js/index.js"></script>

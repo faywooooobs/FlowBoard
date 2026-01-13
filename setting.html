@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人設定 - FlowBoard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #09090b; color: #f4f4f5; }
+        .glass-card { background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(39, 39, 42, 1); }
+        input, textarea { background: #18181b !important; border: 1px solid #27272a !important; color: white !important; }
+        input:focus, textarea:focus { border-color: #3f3f46 !important; outline: none; ring: 0; }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <nav class="sticky top-0 z-50 glass-card border-b border-zinc-800 p-4 mb-6">
+        <div class="max-w-2xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="profile.html" class="p-2 hover:bg-zinc-800 rounded-full transition">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-bold">編輯個人檔案</h1>
+            </div>
+            <button id="save-settings-btn" class="bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-zinc-200 transition">
+                儲存
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto px-4">
+        <section class="mb-8 rounded-2xl overflow-hidden border border-zinc-800">
+            <div class="relative h-40 bg-zinc-900">
+                <img id="profile-banner" src="" class="w-full h-full object-cover opacity-60">
+                <div class="absolute -bottom-10 left-6">
+                    <div class="p-1 bg-zinc-950 rounded-full">
+                        <img id="profile-avatar" src="" class="w-24 h-24 rounded-full border-4 border-zinc-950 object-cover bg-zinc-800">
+                    </div>
+                </div>
+            </div>
+            <div class="h-12 bg-zinc-900/50"></div>
+        </section>
+
+        <div class="space-y-6 mt-16">
+            <div>
+                <label class="block text-sm font-medium text-zinc-500 mb-2 ml-1">顯示暱稱</label>
+                <input type="text" id="edit-nickname" placeholder="想一個響亮的稱呼..." class="w-full p-4 rounded-xl">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-zinc-500 mb-2 ml-1">自我介紹 (Bio)</label>
+                <textarea id="edit-bio" rows="4" placeholder="介紹一下你自己..." class="w-full p-4 rounded-xl resize-none"></textarea>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="relative group">
+                        <img id="profile-avatar" src="" class="w-20 h-20 rounded-full object-cover border-2 border-zinc-800">
+                        <button onclick="document.getElementById('file-avatar').click()" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-full transition">
+                            <i class="fa-solid fa-camera text-white"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold">個人頭像</p>
+                        <p class="text-xs text-zinc-500">建議 400x400 PNG/JPG</p>
+                    </div>
+                    <input type="file" id="file-avatar" class="hidden" accept="image/*" 
+                           onchange="const r=new FileReader();r.onload=e=>document.getElementById('profile-avatar').src=e.target.result;r.readAsDataURL(this.files[0])">
+                </div>
+            
+                <div class="mt-6">
+                    <p class="text-sm font-bold mb-2">橫幅背景</p>
+                    <div class="relative h-32 w-full bg-zinc-900 rounded-xl overflow-hidden group border border-zinc-800">
+                        <img id="profile-banner" src="" class="w-full h-full object-cover">
+                        <button onclick="document.getElementById('file-banner').click()" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                            <i class="fa-solid fa-image text-white mr-2"></i> 點擊更換
+                        </button>
+                    </div>
+                    <input type="file" id="file-banner" class="hidden" accept="image/*" 
+                           onchange="const r=new FileReader();r.onload=e=>document.getElementById('profile-banner').src=e.target.result;r.readAsDataURL(this.files[0])">
+                </div>
+            </div>
+            
+            <p id="settings-status" class="text-center text-sm text-zinc-500 mt-4"></p>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/setting.js"></script>
+</body>
+</html>
