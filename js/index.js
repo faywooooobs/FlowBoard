@@ -172,42 +172,48 @@ async function loadUserProfile(targetUsername) {
     const { data, error } = await _sb.from('profiles').select('*').ilike('username', targetUsername).single();
     if (error || !data) return;
 
+    // 1. 設定基礎 UI 文字
     const setUI = (id, text) => { if (document.getElementById(id)) document.getElementById(id).innerText = text || ''; };
     setUI('profile-name', data.nickname || data.username);
     setUI('profile-handle', `@${data.username}`);
     setUI('profile-bio', data.bio || "暫無簡介");
     
-    // 設定頭像
-    const avatarImg = document.getElementById('profile-avatar');
-    if (avatarImg) {
-        avatarImg.src = data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`;
+    // 2. 設定頭像與橫幅
+    if (document.getElementById('profile-avatar')) {
+        document.getElementById('profile-avatar').src = data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`;
+    }
+    if (document.getElementById('profile-banner')) {
+        document.getElementById('profile-banner').src = data.banner_url || 'https://images.unsplash.com/photo-1557683316-973673baf926';
     }
 
-    // --- 勳章處理邏輯 (檔案頁版本) ---
-    // 假設你的 HTML 中頭像外層容器 ID 是 'profile-avatar-container'
+    // 3. 【關鍵：判斷是否為本人】
+    // 比對正在查看的 username 是否等於目前登入的 myUsername
+    const isMe = (data.username === window.myUsername);
+    
+    // 控制「帳號設定」按鈕的顯示 (包含你原本的兩個按鈕)
+    const editBtn = document.getElementById('edit-profile-btn');
+    const personalSettingsBtn = document.getElementById('personal-settings-btn');
+
+    if (isMe) {
+        if (editBtn) editBtn.style.display = 'flex';
+        if (personalSettingsBtn) personalSettingsBtn.style.display = 'flex';
+    } else {
+        if (editBtn) editBtn.style.display = 'none';
+        if (personalSettingsBtn) personalSettingsBtn.style.display = 'none';
+    }
+
+    // 4. 勳章處理邏輯 (保持不變)
     const badgeContainer = document.getElementById('profile-avatar-container');
     if (badgeContainer) {
-        // 先移除舊的勳章
         const oldBadge = badgeContainer.querySelector('.profile-badge');
         if (oldBadge) oldBadge.remove();
-
         let badgeHtml = '';
         if (data.is_official) {
-            badgeHtml = `<div class="profile-badge absolute bottom-1 right-1 w-7 h-7 bg-black rounded-full flex items-center justify-center border-2 border-black">
-                            <i class="fa-solid fa-shield-halved text-sm text-yellow-500"></i>
-                         </div>`;
+            badgeHtml = `<div class="profile-badge absolute bottom-1 right-1 w-7 h-7 bg-black rounded-full flex items-center justify-center border-2 border-black"><i class="fa-solid fa-shield-halved text-sm text-yellow-500"></i></div>`;
         } else if (data.is_verified) {
-            badgeHtml = `<div class="profile-badge absolute bottom-1 right-1 w-7 h-7 bg-black rounded-full flex items-center justify-center border-2 border-black">
-                            <i class="fa-solid fa-circle-check text-base text-blue-400"></i>
-                         </div>`;
+            badgeHtml = `<div class="profile-badge absolute bottom-1 right-1 w-7 h-7 bg-black rounded-full flex items-center justify-center border-2 border-black"><i class="fa-solid fa-circle-check text-base text-blue-400"></i></div>`;
         }
         badgeContainer.insertAdjacentHTML('beforeend', badgeHtml);
-    }
-
-    // 設定橫幅
-    const bannerImg = document.getElementById('profile-banner');
-    if (bannerImg) {
-        bannerImg.src = data.banner_url || 'https://images.unsplash.com/photo-1557683316-973673baf926';
     }
 }
 
